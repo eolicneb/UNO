@@ -22,7 +22,7 @@ h1 {
     text-align: center;
 }
 
-#mesa, #otro {
+#mesa, #otro, #yo_container {
     display: flex;
     width: 100%;
     margin: 20px;
@@ -35,7 +35,7 @@ h1 {
     justify-content: space-evenly;
 }
 
-#mazo {
+#mazo, #pozo {
     display: flex;
     flex-direction: row;
 }
@@ -53,8 +53,6 @@ h1 {
 .carta {
     width: 100%;
     height: 100%;
-    float: center;
-    margin:4px;
 }
 
 .dorso {
@@ -64,7 +62,10 @@ h1 {
     background-repeat: repeat;
     clear: both;
     display: block;
-    float: center;
+    border: solid 1px rgba(231, 231, 231, 0.884);
+}
+
+#otro .dorso {
     margin: 4px;
 }
 
@@ -78,38 +79,39 @@ h1 {
 }
 
 #yo {
-    width: 160px;
-    /* height: 100vw; */
-    overflow-y: auto;
-    overflow-x: hidden;
-    transform: rotate(-90deg) translate(-50px, -140px);
-    transform-origin: right top;
-}
-
-#yo_container {
     width: 100%;
-    height: 140px;
+    height: 300px;
+    overflow-x: auto;
+    overflow-y: visible;
     display: flex;
-    flex-direction: row;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
-#yo > .carta-container {
+.carta-container {
+    box-sizing: border-box;
     width: 100px;
     height: 140px;
-    transform: rotate(90deg) translate(100px, -40px);
-    transform-origin: right top;
-    margin-bottom: -40px;
-    margin-right: 40px;
+    /* margin-left: 20px; */
 }
 
 .mazo-container {
     width: 70px !important;
     height: 98px !important;
-    /* position: relative; */
 }
 
-.mazo-offset {
+#pozo .carta-offset {
     width: 1px;
     height: 100px;
+}
+
+#mazo .carta-offset {
+    width: 4px;
+    height: 100px;
+}
+
+#yo .carta-offset {
+    min-width: 40px;
+    max-width: 110px;
+    height: 30px;
 }
