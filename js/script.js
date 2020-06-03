@@ -1,6 +1,9 @@
-const SOCKET_PORT = "6789"
+const url = new URL(location.href)
 
-websocket = new WebSocket(`ws://127.0.0.1:${SOCKET_PORT}/`);
+const SOCKET_HOST = url.searchParams.get('host') || "localhost";
+const SOCKET_PORT = url.searchParams.get('port') || "6789";
+
+websocket = new WebSocket(`ws://${SOCKET_HOST}:${SOCKET_PORT}/`);
 
 // OPERACIONES DE PREGUNTA
 
@@ -24,7 +27,7 @@ function descartar_al_pozo(num_carta) {
 }
 
 function mandar_nombre() {
-    let nombre = (new URL(location.href)).searchParams.get('nombre')
+    let nombre = url.searchParams.get('nombre')
     console.log("Registrandose con nombre", nombre);
     websocket.send(JSON.stringify({action: "presentacion", nombre: nombre}));
 }
