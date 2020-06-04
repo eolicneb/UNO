@@ -1,40 +1,94 @@
 const url = new URL(location.href)
 
-const SOCKET_HOST = url.searchParams.get('host') || "localhost";
-const SOCKET_PORT = url.searchParams.get('port') || "6789";
+const HOST = "localhost";
+const PORT = "5000";
+// const url = `http://${HOST}:${PORT}/`;
 
-websocket = new WebSocket(`ws://${SOCKET_HOST}:${SOCKET_PORT}/`);
+console.log("Armando engine");
+let engine = function() {
+    const base_url = url.origin;
+    const engine_url = `${base_url}/engine`;
 
+    let log_id = null;
+    let logged = false;
+
+    let loggeame = function(callback, params) {
+        if (logged) {
+            console.warn("Se intentó volver a loggear");
+            callback(params);
+        }
+        $.ajax({
+            url: `${base_url}/logging`,
+            type: 'GET',
+            success: function(resp) {
+                if (logged) {
+                    console.warn("Se loggeó más de una vez");
+                } else {
+                    log_id = resp.log_id;
+                    logged = true;
+                    console.log("Loggeado con id", log_id, resp);
+                }
+                callback(params);
+            },
+            error: console.error
+        })
+    }
+    loggeame();
+
+    return {
+        log_id: log_id,
+        logged: logged,
+        url: engine_url,
+        send: function(data) {
+            data.log_id = log_id;
+            if (!logged) {
+                loggeame(this.send, data);
+            } else {
+                $.ajax({
+                    url: engine_url,
+                    type: 'POST',
+                    data: data,
+                    // dataType: 'json',
+                    beforeSend: function() { console.log('Sending to url', engine_url); return true; },
+                    success: function(resp) {
+                        console.log("ajax", resp);
+                        resp.mensaje.forEach(function(msg) { onmessage(msg); });
+                    },
+                    error: console.error
+                });
+            }
+        }
+    }
+}(); // new engine(`ws://${HOST}:${PORT}/`);
+
+console.log("Engine url", engine.url);
 // OPERACIONES DE PREGUNTA
 
 function pedir_mazo(num_carta) {
-    websocket.send(JSON.stringify({action: "jugada",
-                                   data: {jugada: "pedir_mazo"}}));
+    engine.send({action: "jugada", data: {jugada: "pedir_mazo"}});
 }
 
 function pedir_pozo() {
-    websocket.send(JSON.stringify({action: "jugada",
-                                   data: {jugada: "pedir_pozo"}}));
+    engine.send({action: "jugada", data: {jugada: "pedir_pozo"}});
 }
 
 function descartar_al_pozo(num_carta) {
     console.log(`Avisando al server. Se descarta ${num_carta}.`)
     if (num_carta) {
-        websocket.send(JSON.stringify({action: "jugada",
-                                       data: {jugada: "descartar",
-                                              carta: num_carta}}));
+        engine.send({action: "jugada", data: {jugada: "descartar",
+                                                 carta: num_carta}});
     }
 }
 
 function mandar_nombre() {
     let nombre = url.searchParams.get('nombre')
     console.log("Registrandose con nombre", nombre);
-    websocket.send(JSON.stringify({action: "presentacion", nombre: nombre}));
+    engine.send({action: "presentacion", nombre: nombre});
 }
 
-websocket.onmessage = function(event) {
-    data = JSON.parse(event.data);
-    console.log(`[WEBSOCEKT] ${event.data}`)
+onmessage = function(data) {
+    // data = JSON.parse(event.data);
+    console.log(`[ENGINE] ${data}`)
     switch (data.type) {
         case 'presentacion':
             mandar_nombre();
@@ -77,7 +131,7 @@ websocket.onmessage = function(event) {
             validar(data.estado);
             break;
         default:
-            console.error("Mensaje raro del websocket", data);
+            console.error("Mensaje raro del engine", data);
     }
 }
 
@@ -362,12 +416,12 @@ $(document).ready(function() {
             } else {
                 if (origen == "pozo") {
                     const result = del_pozo(ui.draggable, a_la_mano);
-                    // AVISO A WEBSOCKET SE SACO UNA CARTA DEL POZO
+                    // AVISO A engine SE SACO UNA CARTA DEL POZO
                     if (result) { pedir_pozo(ui.draggable.find(".simbolo").text()) }
                     console.log("movido", result)
                 } else if (origen == "mazo") {
                     // a_la_mano($del_mazo(ui.draggable));
-                    // LLAMAR A WEBSOCKET PIDIENDO UNA CARTA DEL MAZO
+                    // LLAMAR A engine PIDIENDO UNA CARTA DEL MAZO
                     pedir_mazo();
                 }
             }
@@ -381,6 +435,6 @@ $(document).ready(function() {
         }
     });
 
-    websocket.send(JSON.stringify({"action": "estado"}))
+    engine.send({"action": "estado"});
 
 });
