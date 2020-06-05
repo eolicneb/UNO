@@ -29,16 +29,13 @@ def logging():
 
 @application.route('/engine', methods=['POST'])
 def engine():
-    # print(f" > request \n\tform: {request.form}\n\tdata: {request.data}",
-    #       f"\n\tget_data: {request.get_data()}\n\tget_json: {request.get_json()}",
-    #       f"\n\tjson: {request.json}")
-    # print(f"data {data}")
     data = "no se pudo parsear"
     try:
         data = json.loads(list(request.form.to_dict())[0])
         response = {'mensaje': juego(data['log_id'], data)}
     except Exception as e:
-        response = {"mensaje": f"Error: {e} con request {data}"}
+        print(f"Request error: {e}")
+        response = {"mensaje": [{"type": "error", "message": f"[SERVER ERROR] {e} con request {data}"}]}
     return response
 
 

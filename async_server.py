@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 USERS = {}
 nombres = {}
 
-juego = UNO(6)
+juego = UNO()
 
 
 def state_event(user):
@@ -70,31 +70,34 @@ def retirar(jugador):
 
 
 def counter(client, data):
-    if client not in USERS:
-        return register(client)
+    try:
+        if client not in USERS:
+            return register(client)
 
-    if data["action"] == "estado":
-        return [state_event(client)]
+        if data["action"] == "estado":
+            return [state_event(client)]
 
-    if data["action"] == "poll":
-        # El cliente solo pide q se le manden las
-        # instrucciones en cola. Esto pasa solo.
-        pass
+        if data["action"] == "poll":
+            # El cliente solo pide q se le manden las
+            # instrucciones en cola. Esto pasa solo.
+            pass
 
-    elif data["action"] == "presentacion":
-        presentar(client, data['nombre'])
+        elif data["action"] == "presentacion":
+            presentar(client, data['nombre'])
 
-    elif data["action"] == "retirar":
-        retirar(data['nombre'])
+        elif data["action"] == "retirar":
+            retirar(data['nombre'])
 
-    elif data["action"] == "jugada":
-        jugada = juego.jugada(nombres[client], data["data"])
-        if jugada:
-            notify_jugada(jugada)
+        elif data["action"] == "jugada":
+            jugada = juego.jugada(nombres[client], data["data"])
+            if jugada:
+                notify_jugada(jugada)
 
-    else:
-        logging.error("unsupported event: {}", data)
+        else:
+            logging.error("unsupported event: {}", data)
 
-    send_this = USERS[client][:]
-    USERS[client] = []
+        send_this = USERS[client][:]
+        USERS[client] = []
+    except Exception as e:
+        send_this = [{"type": "error", "message": f"[ENGINE ERROR] {e}"}]
     return send_this

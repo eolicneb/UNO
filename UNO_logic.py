@@ -2,25 +2,30 @@ from random import shuffle, randint
 
 
 class UNO:
-    def __init__(self, ultima_carta, total=40, primera_mano=5):
+    def __init__(self, total=56, primera_mano=5):
         self.total = total
-        self.ultima_carta = ultima_carta
         self._contador_de_nombres = 1
         self.primera_mano = primera_mano
         self.manos = {}
         self.pozo = []
+        self.mazo = []
         # mezclar inicializa el mazo
         self._mezclar()
 
     def _mezclar(self):
-        self.mazo = [randint(0, self.ultima_carta) for _ in range(self.total)]
+        self.mazo = list(range(self.total))
+        shuffle(self.mazo)
 
     def nuevo_jugador(self, jugador=None):
         if not jugador:
             jugador = f"mono-{self._contador_de_nombres}"
             self._contador_de_nombres += 1
         if not jugador in self.manos:
-            self.manos[jugador] = [self.mazo.pop() for _ in range(self.primera_mano)]
+            self.manos[jugador] = []
+            for _ in range(self.primera_mano):
+                if not self.mazo:
+                    break
+                self.manos[jugador].append(self.mazo.pop())
         return jugador
 
     def sacar_jugador(self, jugador):

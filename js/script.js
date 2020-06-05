@@ -10,7 +10,7 @@ let engine = function() {
     const engine_url = `${base_url}/engine`;
 
     // periodo de refresh para hacer polling al engine
-    const check_period = 400;
+    const check_period = 4000;
 
     let log_id = null;
     let logged = false;
@@ -227,13 +227,62 @@ function otro_gano(quien, carta) {
 }
 
 const CARTAS_IMG = {
-    0: "0_rojo",
-    1: "saltea_rojo",
-    2: "1_amarillo",
-    3: "1_azul",
-    4: "1_rojo",
-    5: "1_verde",
-    6: "mas2_amarillo",
+    0: "0_azul",
+    1: "0_rojo",
+    2: "0_amarillo",
+    3: "0_verde",
+    4: "1_azul",
+    5: "1_rojo",
+    6: "1_amarillo",
+    7: "1_verde",
+    8: "2_azul",
+    9: "2_rojo",
+    10: "2_amarillo",
+    11: "2_verde",
+    12: "3_azul",
+    13: "3_rojo",
+    14: "3_amarillo",
+    15: "3_verde",
+    16: "4_azul",
+    17: "4_rojo",
+    18: "4_amarillo",
+    19: "4_verde",
+    20: "5_azul",
+    21: "5_rojo",
+    22: "5_amarillo",
+    23: "5_verde",
+    24: "6_azul",
+    25: "6_rojo",
+    26: "6_amarillo",
+    27: "6_verde",
+    28: "7_azul",
+    29: "7_rojo",
+    30: "7_amarillo",
+    31: "7_verde",
+    32: "8_azul",
+    33: "8_rojo",
+    34: "8_amarillo",
+    35: "8_verde",
+    36: "9_azul",
+    37: "9_rojo",
+    38: "9_amarillo",
+    39: "9_verde",
+    40: "mas2_azul",
+    41: "mas2_rojo",
+    42: "mas2_amarillo",
+    43: "mas2_verde",
+    44: "voltea_azul",
+    45: "voltea_rojo",
+    46: "voltea_amarillo",
+    47: "voltea_verde",
+    48: "saltea_azul",
+    49: "saltea_rojo",
+    50: "saltea_amarillo",
+    51: "saltea_verde",
+    52: "cambio",
+    53: "mas4",
+    54: "cambio",
+    55: "mas4"
 }
 
 const carta_css = {
