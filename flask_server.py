@@ -1,4 +1,5 @@
 import os
+import json
 from uuid import uuid1
 from flask import Flask, send_from_directory, make_response, request
 from async_server import counter as juego
@@ -28,8 +29,17 @@ def logging():
 
 @application.route('/engine', methods=['POST'])
 def engine():
-    data = request.form
-    return {'mensaje': juego(data['log_id'], data)}
+    # print(f" > request \n\tform: {request.form}\n\tdata: {request.data}",
+    #       f"\n\tget_data: {request.get_data()}\n\tget_json: {request.get_json()}",
+    #       f"\n\tjson: {request.json}")
+    # print(f"data {data}")
+    data = "no se pudo parsear"
+    try:
+        data = json.loads(list(request.form.to_dict())[0])
+        response = {'mensaje': juego(data['log_id'], data)}
+    except Exception as e:
+        response = {"mensaje": f"Error: {e} con request {data}"}
+    return response
 
 
 if __name__ == '__main__':

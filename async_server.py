@@ -76,6 +76,11 @@ def counter(client, data):
     if data["action"] == "estado":
         return [state_event(client)]
 
+    if data["action"] == "poll":
+        # El cliente solo pide q se le manden las
+        # instrucciones en cola. Esto pasa solo.
+        pass
+
     elif data["action"] == "presentacion":
         presentar(client, data['nombre'])
 

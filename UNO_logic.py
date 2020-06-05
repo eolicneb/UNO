@@ -3,12 +3,17 @@ from random import shuffle, randint
 
 class UNO:
     def __init__(self, ultima_carta, total=40, primera_mano=5):
-        self.mazo = [randint(0, ultima_carta) for _ in range(total)]
-        # self.shuffle(mazo)
-        self.pozo = []
-        self.manos = {}
-        self.primera_mano = primera_mano
+        self.total = total
+        self.ultima_carta = ultima_carta
         self._contador_de_nombres = 1
+        self.primera_mano = primera_mano
+        self.manos = {}
+        self.pozo = []
+        # mezclar inicializa el mazo
+        self._mezclar()
+
+    def _mezclar(self):
+        self.mazo = [randint(0, self.ultima_carta) for _ in range(self.total)]
 
     def nuevo_jugador(self, jugador=None):
         if not jugador:
@@ -17,9 +22,6 @@ class UNO:
         if not jugador in self.manos:
             self.manos[jugador] = [self.mazo.pop() for _ in range(self.primera_mano)]
         return jugador
-
-    # def reset(self):
-
 
     def sacar_jugador(self, jugador):
         self.mazo.extend(self.manos[jugador][:])
@@ -44,6 +46,9 @@ class UNO:
 
         elif data['jugada'] == "descartar":
             return self._descartar(jugador, data)
+
+        elif data['jugada'] == "reset":
+            return self._reset()
 
     def _pedir_mazo(self, jugador, data):
             if not self.mazo:
@@ -98,3 +103,12 @@ class UNO:
                 resultado[jugador] = {'jugada': "ganaste"}
 
             return resultado
+
+    def _reset(self):
+        self.pozo = []
+        self._mezclar()
+        resultado = {}
+        self.manos = {jugador: [self.mazo.pop() for _ in range(self.primera_mano)]
+                      for jugador in self.manos}
+        return {jugador: {"type": "estado",
+                          "estado": self.estado(jugador)} for jugador in self.manos}

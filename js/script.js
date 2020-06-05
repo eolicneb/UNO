@@ -9,66 +9,97 @@ let engine = function() {
     const base_url = url.origin;
     const engine_url = `${base_url}/engine`;
 
+    // periodo de refresh para hacer polling al engine
+    const check_period = 400;
+
     let log_id = null;
     let logged = false;
+    let logging = false;
 
     let loggeame = function(callback, params) {
         if (logged) {
             console.warn("Se intentó volver a loggear");
             callback(params);
-        }
-        $.ajax({
-            url: `${base_url}/logging`,
-            type: 'GET',
-            success: function(resp) {
-                if (logged) {
-                    console.warn("Se loggeó más de una vez");
-                } else {
-                    log_id = resp.log_id;
-                    logged = true;
-                    console.log("Loggeado con id", log_id, resp);
+        } else if (!logging) {
+            logging = true;
+            $.ajax({
+                url: `${base_url}/logging`,
+                type: 'GET',
+                success: function(resp) {
+                    logging = false;
+                    if (logged) {
+                        console.warn("Se loggeó más de una vez");
+                    } else {
+                        log_id = resp.log_id;
+                        logged = true;
+                        console.log("Loggeado con id", log_id, resp);
+                        do_periodic_check = true;
+                    }
+                    callback(params);
+                },
+                error: function(err) {
+                    logging = false;
+                    console.error("Logging error:", err);
                 }
-                callback(params);
-            },
-            error: console.error
-        })
+            })
+        }
     }
     loggeame();
+
+    function send(data) {
+        data.log_id = log_id;
+        if (!logged) {
+            loggeame(this.send, data);
+        } else {
+            $.ajax({
+                url: engine_url,
+                type: 'POST',
+                data: JSON.stringify(data),
+                // dataType: 'json',
+                beforeSend: function() {
+                    if (data.action != "poll") {
+                        console.log('Sending', data, 'to url', engine_url);
+                        return true;
+                    }
+                },
+                success: function(resp) {
+                    if (resp.mensaje && resp.mensaje.length) {
+                        console.log("ajax", resp);
+                        resp.mensaje.forEach(function(msg) { onmessage(msg); });
+                    }
+                },
+                error: console.error
+            });
+        }
+    }
+
+    // polling periodico
+    let do_periodic_check = false;
+    function request() {
+        if (do_periodic_check) {
+            send({action: "poll", data: {}});
+        }
+    }
+    setInterval(request, check_period);
+    function start_polling() { do_periodic_check = true; }
 
     return {
         log_id: log_id,
         logged: logged,
         url: engine_url,
-        send: function(data) {
-            data.log_id = log_id;
-            if (!logged) {
-                loggeame(this.send, data);
-            } else {
-                $.ajax({
-                    url: engine_url,
-                    type: 'POST',
-                    data: data,
-                    // dataType: 'json',
-                    beforeSend: function() { console.log('Sending to url', engine_url); return true; },
-                    success: function(resp) {
-                        console.log("ajax", resp);
-                        resp.mensaje.forEach(function(msg) { onmessage(msg); });
-                    },
-                    error: console.error
-                });
-            }
-        }
+        send: send,
+        start_polling: start_polling
     }
 }(); // new engine(`ws://${HOST}:${PORT}/`);
 
 console.log("Engine url", engine.url);
 // OPERACIONES DE PREGUNTA
 
-function pedir_mazo(num_carta) {
+function pedir_mazo() {
     engine.send({action: "jugada", data: {jugada: "pedir_mazo"}});
 }
 
-function pedir_pozo() {
+function pedir_pozo(num_carta) {
     engine.send({action: "jugada", data: {jugada: "pedir_pozo"}});
 }
 
@@ -76,7 +107,7 @@ function descartar_al_pozo(num_carta) {
     console.log(`Avisando al server. Se descarta ${num_carta}.`)
     if (num_carta) {
         engine.send({action: "jugada", data: {jugada: "descartar",
-                                                 carta: num_carta}});
+                                              carta: num_carta}});
     }
 }
 
@@ -122,6 +153,7 @@ onmessage = function(data) {
             break;
         case 'estado':
             validar(data.estado);
+            engine.start_polling();
             break;
         case 'jugadores':
             nombrar(data.nombre, data.otros);
@@ -190,7 +222,7 @@ function tirar_al_pozo(carta, quien) {
 }
 
 function otro_gano(quien, carta) {
-    tirar_al_pozo(quien, carta);
+    tirar_al_pozo(carta, quien);
     $("#footer").text(`${quien} GANO!`);
 }
 
@@ -437,4 +469,8 @@ $(document).ready(function() {
 
     engine.send({"action": "estado"});
 
+});
+
+$("#reset").click(function() {
+    engine.send({action: "jugada", data: {jugada: "reset"}})
 });
