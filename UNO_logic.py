@@ -34,6 +34,8 @@ class UNO:
         del self.manos[jugador]
 
     def estado(self, jugador):
+        if jugador not in self.manos:
+            return {}
         otros = {u: len(m) for u, m in self.manos.items() if u != jugador}
         su_estado = {'mazo': len(self.mazo),
                      'pozo': self.pozo,

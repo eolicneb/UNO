@@ -10,7 +10,7 @@ let engine = function() {
     const engine_url = `${base_url}/engine`;
 
     // periodo de refresh para hacer polling al engine
-    const check_period = 4000;
+    const check_period = 500;
 
     let log_id = null;
     let logged = false;
@@ -27,13 +27,14 @@ let engine = function() {
                 type: 'GET',
                 success: function(resp) {
                     logging = false;
-                    if (logged) {
+                    if (logged == true) {
                         console.warn("Se loggeó más de una vez");
                     } else {
                         log_id = resp.log_id;
                         logged = true;
                         console.log("Loggeado con id", log_id, resp);
                         do_periodic_check = true;
+                        $("#entrar").text("RETIRARSE");
                     }
                     callback(params);
                 },
@@ -44,11 +45,11 @@ let engine = function() {
             })
         }
     }
-    loggeame();
+    // loggeame();
 
     function send(data) {
         data.log_id = log_id;
-        if (!logged) {
+        if (logged == false) {
             loggeame(this.send, data);
         } else {
             $.ajax({
@@ -76,7 +77,7 @@ let engine = function() {
     // polling periodico
     let do_periodic_check = false;
     function request() {
-        if (do_periodic_check) {
+        if (do_periodic_check === true) {
             send({action: "poll", data: {}});
         }
     }
@@ -84,11 +85,17 @@ let engine = function() {
     function start_polling() { do_periodic_check = true; }
 
     return {
+        nombre: "",
         log_id: log_id,
-        logged: logged,
         url: engine_url,
         send: send,
-        start_polling: start_polling
+        start_polling: start_polling,
+        is_logged: function() { return logged; },
+        desconectar: function() {
+            logged = false;
+            do_periodic_check = false;
+            $("#entrar").text("ENTRAR");
+        }
     }
 }(); // new engine(`ws://${HOST}:${PORT}/`);
 
@@ -111,19 +118,18 @@ function descartar_al_pozo(num_carta) {
     }
 }
 
-function mandar_nombre() {
-    let nombre = url.searchParams.get('nombre')
-    console.log("Registrandose con nombre", nombre);
-    engine.send({action: "presentacion", nombre: nombre});
+function mandar_nombre(nombre) {
+    if (engine.is_logged() === true) {
+        nombre = nombre || url.searchParams.get('nombre')
+        console.log("Registrandose con nombre", nombre);
+        engine.send({action: "presentacion", nombre: nombre});
+    }
 }
 
 onmessage = function(data) {
     // data = JSON.parse(event.data);
     console.log(`[ENGINE] ${data}`)
     switch (data.type) {
-        case 'presentacion':
-            mandar_nombre();
-            break;
         case 'jugada':
             switch (data.jugada) {
                 case 'ganaste':
@@ -151,12 +157,22 @@ onmessage = function(data) {
                     console.error("Jugada no conocida", data.jugada)
             }
             break;
+        case 'presentacion':
+            mandar_nombre();
+            break;
         case 'estado':
             validar(data.estado);
             engine.start_polling();
             break;
         case 'jugadores':
             nombrar(data.nombre, data.otros);
+            break;
+        case 'mensaje':
+            mensaje(data.nombre, data.mensaje);
+            break;
+        case 'desconectar':
+            console.log("Desconectando...")
+            engine.desconectar();
             break;
         case 'error':
             console.log("Jugada incorrecta", data.error)
@@ -175,6 +191,7 @@ function gane() {
 
 function validar(estado) {
     console.log("Estado", estado);
+    engine.nombre = estado.nombre;
     $("#nombre").text(estado.nombre);
     if (estado.mazo != $("#mazo").children.length) {
         armar_mazo(estado.mazo);
@@ -224,6 +241,10 @@ function tirar_al_pozo(carta, quien) {
 function otro_gano(quien, carta) {
     tirar_al_pozo(carta, quien);
     $("#footer").text(`${quien} GANO!`);
+}
+
+function mensaje(jugador, mensaje) {
+    $("#mensajes").text(`(( ${jugador} ))-> ${mensaje}`);
 }
 
 const CARTAS_IMG = {
@@ -516,10 +537,34 @@ $(document).ready(function() {
         }
     });
 
-    engine.send({"action": "estado"});
-
 });
 
 $("#reset").click(function() {
     engine.send({action: "jugada", data: {jugada: "reset"}})
 });
+
+$("#entrar").click(function() {
+    console.log("is_logged", engine.is_logged());
+    if (engine.is_logged() !== true) {
+        console.log("loggeandose");
+        engine.send({action: "estado"});
+    } else {
+        console.log("retirandose");
+        engine.send({action: "retirar", nombre: engine.nombre});
+    }
+});
+
+function mandar_mensaje() {
+    let msg = $("#mensaje").val();
+    if (msg != "") {
+        console.log("mandando mensaje", msg);
+        engine.send({action: "mensaje", mensaje: msg});
+        $("#mensaje").val("");
+    } else {
+        console.log("mensaje vacío!");
+    }
+}
+
+$("#yo_container .hablar").click(mandar_mensaje);
+
+$("#yo_container .hablar").bind("enterKey", mandar_mensaje);

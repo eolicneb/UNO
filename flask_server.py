@@ -2,7 +2,7 @@ import os
 import json
 from uuid import uuid1
 from flask import Flask, send_from_directory, make_response, request
-from async_server import counter as juego
+from async_server import EngineServer
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO)
 # set the project root directory as the static folder, you can set others.
 application = Flask(__name__, static_url_path='')
 
+juego = EngineServer()
 
 @application.route('/')
 def index():
